@@ -373,32 +373,68 @@ function group(array, keySelector, valueSelector) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  value: '',
+  curOrd: 0,
+
+  element(value) {
+    return this.createSelector(value, 0, 'hasTag');
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    const valueToJoin = '#'.concat(value);
+    return this.createSelector(valueToJoin, 1, 'hasId');
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    const valueToJoin = '.'.concat(value);
+    return this.createSelector(valueToJoin, 2);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    const valueToJoin = '['.concat(value).concat(']');
+    return this.createSelector(valueToJoin, 3);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    const valueToJoin = ':'.concat(value);
+    return this.createSelector(valueToJoin, 4);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    const valueToJoin = '::'.concat(value);
+    return this.createSelector(valueToJoin, 5, 'hasPseudo');
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    const resSelector = `${selector1.value} ${combinator} ${selector2.value}`;
+    const obj = Object.create(this, { value: { value: resSelector } });
+    return obj;
+  },
+
+  createSelector(value, curOrd, hasElem = null) {
+    if (
+      (hasElem === 'hasId' && this.hasId) ||
+      (hasElem === 'hasTag' && this.hasTag) ||
+      (hasElem === 'hasPseudo' && this.hasPseudo)
+    ) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (curOrd < this.curOrd) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    const obj = Object.create(this);
+    obj.value = this.value + value;
+    obj.curOrd = curOrd;
+    if (hasElem) obj[hasElem] = true;
+    return obj;
+  },
+
+  stringify() {
+    return this.value;
   },
 };
 
